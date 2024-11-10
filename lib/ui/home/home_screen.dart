@@ -36,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
         childAspectRatio: 2,
         children: List.generate(20, (index) {
           return CarCard(
+            isAdmin: false,
             imageUrl:
                 'https://images.pexels.com/photos/244206/pexels-photo-244206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
             model: 'Modelo ${index + 1}',

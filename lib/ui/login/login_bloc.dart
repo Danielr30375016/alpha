@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alpha/ui/admin_marketplace/admin_marketplace_screen.dart';
 import 'package:alpha/ui/login/login_state.dart';
 import 'package:alpha/ui/upload_image/upload_image_screen.dart';
 import 'package:bloc/bloc.dart';
@@ -37,7 +38,8 @@ class LoginBloc extends Cubit<LoginState> {
       );
       if (userCredential.user != null) {
         // ignore: use_build_context_synchronously
-        context.go(UpLoadImageScreen.routeName);
+        // context.go("${UpLoadImageScreen.routeName.replaceAll(':id', "50")}");
+        context.go(AdminMarketplaceScreen.routeName);
       }
     } catch (e) {
       // ignore: use_build_context_synchronously

@@ -10,10 +10,15 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UpLoadImageScreen extends StatefulWidget {
-  static const routeName = '/upload-image';
-  const UpLoadImageScreen({super.key});
+  final int id;
+  final CarModel carModel;
+  static const routeName = '/upload-image/:id';
+
+  const UpLoadImageScreen(
+      {super.key, required this.id, required this.carModel});
 
   @override
+  // ignore: library_private_types_in_public_api
   _UpLoadImageScreenState createState() => _UpLoadImageScreenState();
 }
 
@@ -26,8 +31,29 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _engineController = TextEditingController();
   final TextEditingController _yearController = TextEditingController();
-  var pickedFile;
   late String imageUrl;
+
+  @override
+  void initState() {
+    _modelController.text = widget.carModel.model;
+    _brandController.text = widget.carModel.brand;
+    _mileageController.text = widget.carModel.mileage;
+    _priceController.text = widget.carModel.price;
+    _engineController.text = widget.carModel.engine;
+    _yearController.text = widget.carModel.year.toString();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _modelController.dispose();
+    _brandController.dispose();
+    _mileageController.dispose();
+    _priceController.dispose();
+    _engineController.dispose();
+    _yearController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,8 +117,9 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
                     padding: const EdgeInsets.only(top: 80),
                     child: Container(
                       constraints:
-                          BoxConstraints(maxWidth: 600, maxHeight: 400),
+                          const BoxConstraints(maxWidth: 600, maxHeight: 400),
                       child: CarCard(
+                        isAdmin: false,
                         imageUrl:
                             "https://firebasestorage.googleapis.com/v0/b/alpha-ea10f.firebasestorage.app/o/car_images%2F1731261706628?alt=media&token=104d9233-97f0-4e70-9aae-c987f970ef35",
                         model: 'Modelo ${_modelController.text}',

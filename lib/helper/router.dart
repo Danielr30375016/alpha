@@ -1,3 +1,5 @@
+import 'package:alpha/domain/models/car_model.dart';
+import 'package:alpha/ui/admin_marketplace/admin_marketplace_screen.dart';
 import 'package:alpha/ui/home/home_screen.dart';
 import 'package:alpha/ui/login/login_screen.dart';
 import 'package:alpha/ui/upload_image/upload_image_screen.dart';
@@ -24,11 +26,18 @@ class Routes {
       ),
       GoRoute(
         path: UpLoadImageScreen.routeName,
-        builder: (context, state) => const UpLoadImageScreen(),
+        builder: (context, state) => UpLoadImageScreen(
+          id: int.parse(state.pathParameters['id']!),
+          carModel: state.extra as CarModel,
+        ),
       ),
       GoRoute(
         path: HomeScreen.routeName,
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: AdminMarketplaceScreen.routeName,
+        builder: (context, state) => const AdminMarketplaceScreen(),
       ),
     ],
   );

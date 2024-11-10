@@ -24,8 +24,8 @@ class CarModel {
     required this.createdAt,
   });
 
-  CarModel fromJson(Map<String, dynamic> json) => CarModel(
-        id: json['id'] as int,
+  factory CarModel.fromJson(Map<String, dynamic> json) => CarModel(
+        id: json['id'] as int?,
         model: json['model'] as String,
         brand: json['brand'] as String,
         mileage: json['mileage'] as String,

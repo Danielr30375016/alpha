@@ -8,6 +8,9 @@ class CarCard extends StatelessWidget {
   final String mileage;
   final String price;
   final String engine;
+  final bool isAdmin;
+  final VoidCallback? onTapEdit;
+  final VoidCallback? onTapDelete;
 
   const CarCard({
     super.key,
@@ -17,6 +20,9 @@ class CarCard extends StatelessWidget {
     required this.mileage,
     required this.price,
     required this.engine,
+    required this.isAdmin,
+    this.onTapEdit,
+    this.onTapDelete,
   });
 
   @override
@@ -34,6 +40,7 @@ class CarCard extends StatelessWidget {
       engine,
       price,
     ];
+
     return LayoutBuilder(
       builder: (context, constraints) => Card(
         color: Colors.grey[900],
@@ -41,41 +48,27 @@ class CarCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
         ),
         elevation: 5,
-        // margin: const EdgeInsets.all(8),
         child: LayoutBuilder(
           builder: (context, constraints) => SizedBox(
             width: constraints.maxWidth,
             child: Stack(
               children: [
-                CachedNetworkImage(
-                  imageUrl:
-                      "https://firebasestorage.googleapis.com/v0/b/alpha-ea10f.firebasestorage.app/o/car_images%2F1731261706628?alt=media&token=104d9233-97f0-4e70-9aae-c987f970ef35",
-                  placeholder: (context, url) =>
-                      CircularProgressIndicator(), // Muestra un cargador mientras se descarga la imagen
-                  errorWidget: (context, url, error) => Icon(Icons
-                      .error), // Muestra un ícono de error si no se puede cargar
-                  fit: BoxFit.cover,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    errorWidget: (context, url, error) => const Icon(
+                      Icons.error,
+                      color: Colors.red,
+                    ),
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                // ClipRRect(
-                //   borderRadius: BorderRadius.circular(10),
-                //   child: Image.network(
-                //     imageUrl,
-                //     width: constraints.maxWidth,
-                //     height: constraints.maxHeight,
-                //     fit: BoxFit.cover,
-                //     // fit: BoxFit.contain,
-                //     loadingBuilder: (context, child, loadingProgress) {
-                //       if (loadingProgress == null) return child;
-                //       return const Center(child: CircularProgressIndicator());
-                //     },
-                //     errorBuilder: (context, error, stackTrace) => const Center(
-                //       child: Icon(
-                //         Icons.error,
-                //         color: Colors.red,
-                //       ),
-                //     ),
-                //   ),
-                // ),
                 Container(
                   width: constraints.maxWidth,
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -83,9 +76,8 @@ class CarCard extends StatelessWidget {
                     borderRadius:
                         BorderRadius.vertical(bottom: Radius.circular(10)),
                     gradient: LinearGradient(
-                      begin: Alignment.topCenter, // Inicia en la parte superior
-                      end: Alignment
-                          .bottomCenter, // Termina en la parte inferior
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                       colors: [Colors.transparent, Colors.black87],
                     ),
                   ),
@@ -104,23 +96,19 @@ class CarCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       SizedBox(
                         width: constraints.maxWidth,
-                        child: LayoutBuilder(
-                          builder: (context, constraints) => SizedBox(
-                            width: constraints.maxWidth,
-                            child: Column(
-                              children: [
-                                _buildInfoRow(
-                                    icons[0], texts[0], icons[1], texts[1]),
-                                _buildInfoRow(
-                                    icons[2], texts[2], icons[3], texts[3]),
-                              ],
-                            ),
-                          ),
+                        child: Column(
+                          children: [
+                            _buildInfoRow(
+                                icons[0], texts[0], icons[1], texts[1]),
+                            _buildInfoRow(
+                                icons[2], texts[2], icons[3], texts[3]),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
+                if (isAdmin) _buildAdminButtons(context),
               ],
             ),
           ),
@@ -129,6 +117,71 @@ class CarCard extends StatelessWidget {
     );
   }
 
+  Widget _buildAdminButtons(BuildContext context) {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () {
+              if (onTapEdit == null) return;
+              onTapEdit!();
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    offset: const Offset(0, 4),
+                    blurRadius: 6,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.edit_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Botón de eliminar con fondo y sombra
+          InkWell(
+            onTap: () {
+              _showDeleteConfirmationDialog(context);
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    offset: const Offset(0, 4),
+                    blurRadius: 6,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.clear_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Función para construir las filas de información
   Widget _buildInfoRow(IconData firstIcon, String firstText,
       IconData secondIcon, String secondText) {
     return Row(
@@ -140,9 +193,7 @@ class CarCard extends StatelessWidget {
           style: const TextStyle(color: Colors.white, fontSize: 14),
           overflow: TextOverflow.ellipsis,
         ),
-        Expanded(
-          child: Container(),
-        ),
+        Expanded(child: Container()),
         Icon(secondIcon, color: Colors.grey[300], size: 16),
         const SizedBox(width: 4),
         Text(
@@ -151,6 +202,36 @@ class CarCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
       ],
+    );
+  }
+
+  // Función para mostrar el dialogo de confirmación de eliminación
+  void _showDeleteConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar eliminación'),
+          content:
+              const Text('¿Estás seguro de que deseas eliminar este vehículo?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (onTapDelete == null) return;
+                onTapDelete!();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
