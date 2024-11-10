@@ -1,27 +1,25 @@
-import 'dart:io' as io;
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:alpha/di/injection.dart';
+import 'package:alpha/domain/models/car_model.dart';
+import 'package:alpha/ui/appbar/app_bar_widget.dart';
+import 'package:alpha/ui/upload_image/upload_image_bloc.dart';
+import 'package:alpha/ui/upload_image/upload_image_state.dart';
+import 'package:alpha/ui/widgets/car_card.dart';
+import 'package:alpha/ui/widgets/pop_up_window.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UpLoadImageScreen extends StatefulWidget {
   static const routeName = '/upload-image';
-  const UpLoadImageScreen({
-    super.key,
-  });
+  const UpLoadImageScreen({super.key});
+
   @override
   _UpLoadImageScreenState createState() => _UpLoadImageScreenState();
 }
 
 class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
+  final UploadImageBloc _uploadImageBloc = getIt<UploadImageBloc>();
   final _formKey = GlobalKey<FormState>();
-  final _picker = ImagePicker();
-  File? _image;
-  String? _imageUrl;
-
   final TextEditingController _modelController = TextEditingController();
   final TextEditingController _brandController = TextEditingController();
   final TextEditingController _mileageController = TextEditingController();
@@ -31,112 +29,204 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
   var pickedFile;
   late String imageUrl;
 
-  Future<void> _pickImage() async {
-    pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    setState(() {
-      if (pickedFile != null) {
-        _image = File(pickedFile.path);
-      }
-    });
-  }
-
-  Future<void> _uploadImage() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print("Error: Usuario no autenticado.");
-      return;
-    } else {
-      if (pickedFile != null) {
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('car_images/${DateTime.now().millisecondsSinceEpoch}');
-
-        if (kIsWeb) {
-          // Código para Web: Usa `Uint8List`
-          Uint8List imageData = await pickedFile.readAsBytes();
-          await storageRef.putData(imageData);
-        } else {
-          // Código para dispositivos móviles: Usa `File`
-          io.File imageFile = io.File(pickedFile.path);
-          await storageRef.putFile(imageFile);
-        }
-
-        // Obtener la URL de descarga
-        imageUrl = await storageRef.getDownloadURL();
-        print('Image URL: $imageUrl');
-        // Aquí puedes asignar `imageUrl` a una variable o hacer lo que necesites con él
-      }
-    }
-  }
-
-  Future<void> _submitData() async {
-    if (_formKey.currentState!.validate()) {
-      await _uploadImage();
-
-      final carData = {
-        'model': _modelController.text,
-        'brand': _brandController.text,
-        'mileage': _mileageController.text,
-        'price': _priceController.text,
-        'engine': _engineController.text,
-        'year': int.parse(_yearController.text),
-        'image': imageUrl,
-        'createdAt': DateTime.now().millisecondsSinceEpoch, // Timestamp as int
-      };
-
-      await FirebaseFirestore.instance.collection('cars').add(carData);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Car added successfully')));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Car')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                  controller: _modelController,
-                  decoration: InputDecoration(labelText: 'Model'),
-                  validator: (value) => value!.isEmpty ? 'Enter model' : null),
-              TextFormField(
-                  controller: _brandController,
-                  decoration: InputDecoration(labelText: 'Brand'),
-                  validator: (value) => value!.isEmpty ? 'Enter brand' : null),
-              TextFormField(
-                  controller: _mileageController,
-                  decoration: InputDecoration(labelText: 'Mileage'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Enter mileage' : null),
-              TextFormField(
-                  controller: _priceController,
-                  decoration: InputDecoration(labelText: 'Price'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty ? 'Enter price' : null),
-              TextFormField(
-                  controller: _engineController,
-                  decoration: InputDecoration(labelText: 'Engine'),
-                  validator: (value) => value!.isEmpty ? 'Enter engine' : null),
-              TextFormField(
-                  controller: _yearController,
-                  decoration: InputDecoration(labelText: 'Year'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty ? 'Enter year' : null),
-              SizedBox(height: 20),
-              ElevatedButton(
-                  onPressed: _pickImage, child: Text('Choose Image')),
-              SizedBox(height: 20),
-              ElevatedButton(onPressed: _submitData, child: Text('Submit')),
-            ],
-          ),
-        ),
+      appBar: AutoShopAppBar(onLanguageChange: (value) {}),
+      backgroundColor: Colors.grey[850],
+      body: BlocConsumer<UploadImageBloc, UploadImageState>(
+          bloc: _uploadImageBloc,
+          listener: (context, state) {
+            if (state.showMessage == 1) {
+              PopUpWindow.showError(context, 'Error: Image not selected');
+              _uploadImageBloc.clearMessage();
+            }
+          },
+          builder: (context, state) {
+            if (!state.loadInfo) {
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                _uploadImageBloc.getFirstState();
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
+            return Center(
+              child: Flex(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                direction: Axis.horizontal,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Complete the details below to list a car for sale:',
+                              style: TextStyle(color: Colors.white54),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            ..._buildTextFormFields(),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: constraints.maxWidth,
+                              child: Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                children: [
+                                  _buildImagePickerButton(),
+                                  _buildSubmitButton(state),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 80),
+                    child: Container(
+                      constraints:
+                          BoxConstraints(maxWidth: 600, maxHeight: 400),
+                      child: CarCard(
+                        imageUrl:
+                            "https://firebasestorage.googleapis.com/v0/b/alpha-ea10f.firebasestorage.app/o/car_images%2F1731261706628?alt=media&token=104d9233-97f0-4e70-9aae-c987f970ef35",
+                        model: 'Modelo ${_modelController.text}',
+                        brand: 'Marca ${_brandController.text}',
+                        mileage: '${_mileageController.text} km',
+                        price: _priceController.text,
+                        engine: _engineController.text,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            );
+          }),
+    );
+  }
+
+  List<Widget> _buildTextFormFields() {
+    final fields = [
+      {
+        'label': 'Model',
+        'hintText': 'e.g., Accord',
+        'controller': _modelController
+      },
+      {
+        'label': 'Brand',
+        'hintText': 'e.g., Honda',
+        'controller': _brandController
+      },
+      {
+        'label': 'Mileage (km)',
+        'hintText': 'e.g., 15000',
+        'controller': _mileageController
+      },
+      {
+        'label': 'Price (USD)',
+        'hintText': 'e.g., 25000',
+        'controller': _priceController
+      },
+      {
+        'label': 'Engine Type',
+        'hintText': 'e.g., V6',
+        'controller': _engineController
+      },
+      {
+        'label': 'Year',
+        'hintText': 'e.g., 2020',
+        'controller': _yearController
+      },
+    ];
+    return fields
+        .map((field) => Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: TextFormField(
+                  controller: field['controller'] as TextEditingController,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: field['label'] == 'Year' ||
+                          field['label'] == 'Price (USD)' ||
+                          field['label'] == 'Mileage (km)'
+                      ? TextInputType.number
+                      : TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: field['label'] as String,
+                    labelStyle: const TextStyle(color: Colors.white54),
+                    hintText: field['hintText'] as String,
+                    hintStyle: const TextStyle(color: Colors.white30),
+                    filled: true,
+                    fillColor: Colors.grey[800],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blueAccent),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return 'Please enter ${field['label']}';
+                    }
+                    if (field['label'] == 'Year') {
+                      try {
+                        if (int.parse(value) < 1900) {
+                          return 'Please enter a valid year';
+                        }
+                      } catch (e) {
+                        return 'Please enter a valid year';
+                      }
+                    }
+                    return null;
+                  }),
+            ))
+        .toList();
+  }
+
+  Widget _buildImagePickerButton() {
+    return ElevatedButton.icon(
+      onPressed: _uploadImageBloc.pickImage,
+      icon: const Icon(Icons.image, color: Colors.white70),
+      label:
+          const Text('Choose Image', style: TextStyle(color: Colors.white70)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.grey[800],
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
+    );
+  }
+
+  Widget _buildSubmitButton(UploadImageState state) {
+    return ElevatedButton(
+      onPressed: () {
+        if (_formKey.currentState!.validate()) {
+          _uploadImageBloc.submitData(
+              context,
+              CarModel(
+                id: null,
+                model: _modelController.text,
+                brand: _brandController.text,
+                mileage: _mileageController.text,
+                price: _priceController.text,
+                engine: _engineController.text,
+                year: int.parse(_yearController.text),
+                image: '',
+                createdAt: DateTime.now().millisecondsSinceEpoch,
+              ));
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blueAccent,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: const Text('Submit', style: TextStyle(color: Colors.black)),
     );
   }
 }
