@@ -27,8 +27,8 @@ class Routes {
       GoRoute(
         path: UpLoadImageScreen.routeName,
         builder: (context, state) => UpLoadImageScreen(
-          id: int.parse(state.pathParameters['id']!),
-          carModel: state.extra as CarModel,
+          id: state.pathParameters['id']!,
+          carModel: state.extra as CarModel?,
         ),
       ),
       GoRoute(

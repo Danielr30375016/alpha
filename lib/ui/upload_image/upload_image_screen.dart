@@ -4,14 +4,15 @@ import 'package:alpha/ui/appbar/app_bar_widget.dart';
 import 'package:alpha/ui/upload_image/upload_image_bloc.dart';
 import 'package:alpha/ui/upload_image/upload_image_state.dart';
 import 'package:alpha/ui/widgets/car_card.dart';
+import 'package:alpha/ui/widgets/mage_width_delete_button.dart';
 import 'package:alpha/ui/widgets/pop_up_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UpLoadImageScreen extends StatefulWidget {
-  final int id;
-  final CarModel carModel;
+  final String id;
+  final CarModel? carModel;
   static const routeName = '/upload-image/:id';
 
   const UpLoadImageScreen(
@@ -35,12 +36,6 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
 
   @override
   void initState() {
-    _modelController.text = widget.carModel.model;
-    _brandController.text = widget.carModel.brand;
-    _mileageController.text = widget.carModel.mileage;
-    _priceController.text = widget.carModel.price;
-    _engineController.text = widget.carModel.engine;
-    _yearController.text = widget.carModel.year.toString();
     super.initState();
   }
 
@@ -71,9 +66,20 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
           builder: (context, state) {
             if (!state.loadInfo) {
               SchedulerBinding.instance.addPostFrameCallback((_) {
-                _uploadImageBloc.getFirstState();
+                _uploadImageBloc.getFirstState(widget.id, widget.carModel);
               });
               return const Center(child: CircularProgressIndicator());
+            }
+            if (state.carModel != null && !state.loadFirstState) {
+              _modelController.text = state.carModel!.model;
+              _brandController.text = state.carModel!.brand;
+              _mileageController.text = state.carModel!.mileage;
+              _priceController.text = state.carModel!.price;
+              _engineController.text = state.carModel!.engine;
+              _yearController.text = state.carModel!.year.toString();
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                _uploadImageBloc.loadFirstState();
+              });
             }
             return Center(
               child: Flex(
@@ -96,7 +102,7 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 20),
-                            ..._buildTextFormFields(),
+                            ..._buildTextFormFields(state),
                             const SizedBox(height: 20),
                             SizedBox(
                               width: constraints.maxWidth,
@@ -107,7 +113,21 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
                                   _buildSubmitButton(state),
                                 ],
                               ),
-                            )
+                            ),
+                            const SizedBox(height: 20),
+                            if (state.pickedFile != null)
+                              SizedBox(
+                                width: 100,
+                                height: 100,
+                                child: ImageWithDeleteButton(
+                                  selectedImage: state.pickedFile,
+                                  onDelete: () async {
+                                    setState(() {
+                                      state.pickedFile = null;
+                                    });
+                                  },
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -120,13 +140,13 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
                           const BoxConstraints(maxWidth: 600, maxHeight: 400),
                       child: CarCard(
                         isAdmin: false,
-                        imageUrl:
-                            "https://firebasestorage.googleapis.com/v0/b/alpha-ea10f.firebasestorage.app/o/car_images%2F1731261706628?alt=media&token=104d9233-97f0-4e70-9aae-c987f970ef35",
-                        model: 'Modelo ${_modelController.text}',
-                        brand: 'Marca ${_brandController.text}',
-                        mileage: '${_mileageController.text} km',
-                        price: _priceController.text,
-                        engine: _engineController.text,
+                        imageUrl: state.carModel!.image,
+                        model: state.carModel!.model,
+                        brand: state.carModel!.brand,
+                        mileage: state.carModel!.mileage,
+                        price: state.carModel!.price,
+                        engine: state.carModel!.engine,
+                        selectedImage: state.pickedFile,
                       ),
                     ),
                   )
@@ -137,7 +157,7 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
     );
   }
 
-  List<Widget> _buildTextFormFields() {
+  List<Widget> _buildTextFormFields(UploadImageState state) {
     final fields = [
       {
         'label': 'Model',
@@ -196,6 +216,38 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
                       borderSide: BorderSide(color: Colors.blueAccent),
                     ),
                   ),
+                  onChanged: (value) {
+                    if (field['label'] == 'Year') {
+                      setState(() {
+                        state.carModel!.year = int.parse(value);
+                      });
+                    }
+                    if (field['label'] == 'Mileage (km)') {
+                      setState(() {
+                        state.carModel!.mileage = value;
+                      });
+                    }
+                    if (field['label'] == 'Price (USD)') {
+                      setState(() {
+                        state.carModel!.price = value;
+                      });
+                    }
+                    if (field['label'] == 'Engine Type') {
+                      setState(() {
+                        state.carModel!.engine = value;
+                      });
+                    }
+                    if (field['label'] == 'Model') {
+                      setState(() {
+                        state.carModel!.model = value;
+                      });
+                    }
+                    if (field['label'] == 'Brand') {
+                      setState(() {
+                        state.carModel!.brand = value;
+                      });
+                    }
+                  },
                   validator: (value) {
                     if (value!.isEmpty) {
                       return 'Please enter ${field['label']}';
@@ -223,7 +275,7 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
           const Text('Choose Image', style: TextStyle(color: Colors.white70)),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.grey[800],
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
@@ -233,19 +285,7 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
     return ElevatedButton(
       onPressed: () {
         if (_formKey.currentState!.validate()) {
-          _uploadImageBloc.submitData(
-              context,
-              CarModel(
-                id: null,
-                model: _modelController.text,
-                brand: _brandController.text,
-                mileage: _mileageController.text,
-                price: _priceController.text,
-                engine: _engineController.text,
-                year: int.parse(_yearController.text),
-                image: '',
-                createdAt: DateTime.now().millisecondsSinceEpoch,
-              ));
+          _uploadImageBloc.submitData(context, state.carModel!);
         }
       },
       style: ElevatedButton.styleFrom(

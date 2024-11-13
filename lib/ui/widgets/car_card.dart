@@ -1,8 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart'; // Para usar kIsWeb
 
 class CarCard extends StatelessWidget {
-  final String imageUrl;
+  final String? imageUrl;
   final String model;
   final String brand;
   final String mileage;
@@ -11,6 +15,7 @@ class CarCard extends StatelessWidget {
   final bool isAdmin;
   final VoidCallback? onTapEdit;
   final VoidCallback? onTapDelete;
+  final XFile? selectedImage; // Imagen seleccionada (si está presente)
 
   const CarCard({
     super.key,
@@ -23,6 +28,7 @@ class CarCard extends StatelessWidget {
     required this.isAdmin,
     this.onTapEdit,
     this.onTapDelete,
+    this.selectedImage, // Aceptamos la imagen local como parámetro opcional
   });
 
   @override
@@ -53,22 +59,38 @@ class CarCard extends StatelessWidget {
             width: constraints.maxWidth,
             child: Stack(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: CachedNetworkImage(
-                    imageUrl: imageUrl,
-                    placeholder: (context, url) => const Center(
-                      child: CircularProgressIndicator(),
+                // Mostrar la imagen local si está disponible
+                if (selectedImage != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: kIsWeb
+                        ? _buildWebImage(selectedImage!)
+                        : Image.file(
+                            // Mostrar la imagen en dispositivos móviles
+                            File(selectedImage!.path),
+                            width: constraints.maxWidth,
+                            height: constraints.maxHeight,
+                            fit: BoxFit.cover,
+                          ),
+                  )
+                else
+                  // Si no hay imagen seleccionada, mostrar la imagen de la URL
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl ?? '',
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.error,
+                        color: Colors.red,
+                      ),
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                      fit: BoxFit.cover,
                     ),
-                    errorWidget: (context, url, error) => const Icon(
-                      Icons.error,
-                      color: Colors.red,
-                    ),
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    fit: BoxFit.cover,
                   ),
-                ),
                 Container(
                   width: constraints.maxWidth,
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -117,6 +139,25 @@ class CarCard extends StatelessWidget {
     );
   }
 
+  // Método para construir la imagen en la web utilizando Image.memory
+  Widget _buildWebImage(XFile file) {
+    return FutureBuilder<Uint8List>(
+      future: file.readAsBytes(), // Usamos readAsBytes en la web
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+          );
+        }
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+
   Widget _buildAdminButtons(BuildContext context) {
     return Positioned(
       top: 8,
@@ -124,10 +165,7 @@ class CarCard extends StatelessWidget {
       child: Row(
         children: [
           InkWell(
-            onTap: () {
-              if (onTapEdit == null) return;
-              onTapEdit!();
-            },
+            onTap: onTapEdit,
             child: Container(
               width: 40,
               height: 40,
@@ -150,7 +188,6 @@ class CarCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // Botón de eliminar con fondo y sombra
           InkWell(
             onTap: () {
               _showDeleteConfirmationDialog(context);
@@ -181,7 +218,6 @@ class CarCard extends StatelessWidget {
     );
   }
 
-  // Función para construir las filas de información
   Widget _buildInfoRow(IconData firstIcon, String firstText,
       IconData secondIcon, String secondText) {
     return Row(
@@ -205,7 +241,6 @@ class CarCard extends StatelessWidget {
     );
   }
 
-  // Función para mostrar el dialogo de confirmación de eliminación
   void _showDeleteConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -223,8 +258,7 @@ class CarCard extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                if (onTapDelete == null) return;
-                onTapDelete!();
+                onTapDelete?.call();
                 Navigator.of(context).pop();
               },
               child: const Text('Eliminar'),

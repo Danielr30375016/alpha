@@ -1,8 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 @JsonSerializable()
 class CarModel {
-  int? id;
+  String? id;
   String model;
   String brand;
   String mileage;
@@ -24,8 +25,8 @@ class CarModel {
     required this.createdAt,
   });
 
-  factory CarModel.fromJson(Map<String, dynamic> json) => CarModel(
-        id: json['id'] as int?,
+  factory CarModel.fromJson(QueryDocumentSnapshot json) => CarModel(
+        id: json.id as String?,
         model: json['model'] as String,
         brand: json['brand'] as String,
         mileage: json['mileage'] as String,

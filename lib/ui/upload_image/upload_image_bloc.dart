@@ -10,26 +10,40 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io' as io;
 
 class UploadImageBloc extends Cubit<UploadImageState> {
-  UploadImageBloc() : super(const UploadImageState());
+  UploadImageBloc() : super(UploadImageState());
 
-  Future<void> getFirstState() async {
-    CarModel carModel = CarModel(
-      id: null,
-      model: '',
-      brand: '',
-      mileage: '',
-      price: '',
-      engine: '',
-      year: 0,
-      image: '',
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-    );
+  Future<void> getFirstState(String id, CarModel? carModel) async {
+    if (id != '0') {
+      if (carModel == null) {
+        final querySnapshot =
+            await FirebaseFirestore.instance.collection('cars').get();
+        carModel = querySnapshot.docs
+            .map((doc) => CarModel.fromJson(doc))
+            .firstWhere((element) => element.id == id);
+      }
+    } else {
+      carModel = CarModel(
+        id: null,
+        model: '',
+        brand: '',
+        mileage: '',
+        price: '',
+        engine: '',
+        year: 0,
+        image: '',
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      );
+    }
     emit(state.copyWith(loadInfo: true, carModel: carModel, aux: !state.aux));
   }
 
+  void loadFirstState() {
+    emit(state.copyWith(loadFirstState: true));
+  }
+
   Future<void> pickImage() async {
-    final _picker = ImagePicker();
-    XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final picker = ImagePicker();
+    XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       emit(state.copyWith(pickedFile: pickedFile));
@@ -65,7 +79,6 @@ class UploadImageBloc extends Cubit<UploadImageState> {
             imageFile, SettableMetadata(contentType: contentType));
       }
       final imageUrl = await storageRef.getDownloadURL();
-      print(imageUrl);
       carModel.image = imageUrl;
       carModel.createdAt =
           DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
@@ -76,20 +89,36 @@ class UploadImageBloc extends Cubit<UploadImageState> {
   }
 
   Future<void> submitData(BuildContext context, CarModel carModel) async {
-    if (state.pickedFile == null) {
+    if (state.pickedFile == null &&
+        carModel.image.isEmpty &&
+        carModel.id == null) {
       emit(state.copyWith(showMessage: 1, aux: !state.aux));
       return;
     }
     emit(state.copyWith(carModel: carModel));
-    await uploadImage(state.carModel!);
+    if (state.pickedFile != null) {
+      await uploadImage(state.carModel!);
+    }
     final carData = state.carModel!.toJson();
-
-    await FirebaseFirestore.instance.collection('cars').add(carData);
+    if (state.carModel!.id == null) {
+      await FirebaseFirestore.instance.collection('cars').add(carData);
+    } else {
+      await FirebaseFirestore.instance
+          .collection('cars')
+          .doc(state.carModel!.id!)
+          .set(carData);
+    }
     ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Car added successfully')));
+        .showSnackBar(const SnackBar(content: Text('Car added successfully')));
   }
 
   void clearMessage() {
     emit(state.copyWith(showMessage: 0));
+  }
+
+  Future<void> deleteImage() async {
+    await Future.delayed(const Duration(milliseconds: 500), () {
+      emit(state.copyWith(pickedFile: null, aux: !state.aux));
+    });
   }
 }

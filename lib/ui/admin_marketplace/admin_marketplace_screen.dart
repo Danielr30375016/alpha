@@ -3,6 +3,7 @@ import 'package:alpha/ui/admin_marketplace/admin_market_bloc.dart';
 import 'package:alpha/ui/admin_marketplace/admin_market_state.dart';
 import 'package:alpha/ui/upload_image/upload_image_screen.dart';
 import 'package:alpha/ui/widgets/car_card.dart';
+import 'package:alpha/ui/widgets/create_new_car.dart';
 import 'package:alpha/ui/widgets/template.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -33,32 +34,52 @@ class _AdminMarketplaceScreenState extends State<AdminMarketplaceScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         return LayoutBuilder(
-          builder: (context, constraints) => SizedBox(
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-            child: Wrap(
-              children: List.generate(state.cars.length, (i) {
-                return Container(
-                  constraints:
-                      const BoxConstraints(maxWidth: 600, maxHeight: 400),
-                  child: CarCard(
-                    imageUrl: state.cars[i].image,
-                    model: state.cars[i].model,
-                    brand: state.cars[i].brand,
-                    mileage: state.cars[i].mileage,
-                    price: state.cars[i].price,
-                    engine: state.cars[i].engine,
-                    isAdmin: true,
-                    onTapEdit: () {
-                      context.go(
-                          UpLoadImageScreen.routeName.replaceAll(":id", "50"),
-                          extra: state.cars[i]);
-                    },
-                    onTapDelete: () {},
-                  ),
-                );
-              }),
-            ),
+          builder: (context, constraints) => Column(
+            children: [
+              const SizedBox(height: 20),
+              SizedBox(
+                width: constraints.maxWidth,
+                height: 100,
+                child: CreateNewCar(
+                  onTap: () {
+                    context
+                        .go(UpLoadImageScreen.routeName.replaceAll(":id", "0"));
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: constraints.maxWidth,
+                child: Wrap(
+                  runSpacing: 15,
+                  spacing: 15,
+                  children: List.generate(state.cars.length, (i) {
+                    return Container(
+                      constraints:
+                          const BoxConstraints(maxWidth: 600, maxHeight: 400),
+                      child: CarCard(
+                        imageUrl: state.cars[i].image,
+                        model: state.cars[i].model,
+                        brand: state.cars[i].brand,
+                        mileage: state.cars[i].mileage,
+                        price: state.cars[i].price,
+                        engine: state.cars[i].engine,
+                        isAdmin: true,
+                        onTapEdit: () {
+                          context.go(
+                              UpLoadImageScreen.routeName
+                                  .replaceAll(":id", state.cars[i].id!),
+                              extra: state.cars[i]);
+                        },
+                        onTapDelete: () {
+                          _adminMarketBloc.deleteCar(context, state.cars[i]);
+                        },
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
         );
       },

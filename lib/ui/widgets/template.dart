@@ -13,10 +13,17 @@ class Template extends StatelessWidget {
     return SafeArea(
         child: Scaffold(
             appBar: AutoShopAppBar(onLanguageChange: (value) {}),
-            body: Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: MediaQuery.of(context).size.width * 0.05),
-                color: Colors.grey[800],
-                child: child)));
+            body: LayoutBuilder(
+              builder: (context, constraints) => Container(
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  color: Colors.grey[800],
+                  child: SingleChildScrollView(
+                      child: Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width * 0.05),
+                    child: child,
+                  ))),
+            )));
   }
 }
