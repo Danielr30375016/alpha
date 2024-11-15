@@ -120,6 +120,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _passwordController,
                           style: const TextStyle(color: Colors.white),
+                          onSubmitted: (value) {
+                            _onSubmitted();
+                          },
                           obscureText: !state
                               .showPassword, // Cambiar el valor según la visibilidad
                           decoration: InputDecoration(
@@ -154,12 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () {
-                            _loginBloc.login(
-                                email: _emailController.text,
-                                password: _passwordController.text,
-                                context: context);
-                          },
+                          onPressed: _onSubmitted,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white, // Color del botón
                             padding: const EdgeInsets.symmetric(
@@ -184,5 +182,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  void _onSubmitted() {
+    _loginBloc.login(
+        email: _emailController.text,
+        password: _passwordController.text,
+        context: context);
   }
 }

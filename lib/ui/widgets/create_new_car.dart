@@ -39,7 +39,8 @@ class CreateNewCar extends StatelessWidget {
                 ),
                 elevation: 5,
               ),
-              child: const Text('Create'),
+              child:
+                  const Text('Create', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),

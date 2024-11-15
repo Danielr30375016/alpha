@@ -9,6 +9,8 @@ class AdminMarketBloc extends Cubit<AdminMarketState> {
 
   void getFirstState() async {
     List<CarModel> cars = await getCars();
+    cars.addAll([...cars]);
+    cars.addAll([...cars]);
     emit(AdminMarketState(loadInfo: true, cars: cars));
   }
 

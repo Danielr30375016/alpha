@@ -1,4 +1,5 @@
 import 'package:alpha/di/injection.dart';
+import 'package:alpha/helper/helper.dart';
 import 'package:alpha/ui/admin_marketplace/admin_market_bloc.dart';
 import 'package:alpha/ui/admin_marketplace/admin_market_state.dart';
 import 'package:alpha/ui/upload_image/upload_image_screen.dart';
@@ -54,9 +55,10 @@ class _AdminMarketplaceScreenState extends State<AdminMarketplaceScreen> {
                   runSpacing: 15,
                   spacing: 15,
                   children: List.generate(state.cars.length, (i) {
-                    return Container(
-                      constraints:
-                          const BoxConstraints(maxWidth: 600, maxHeight: 400),
+                    List<double> size = Helper.getWidthOfCard(constraints);
+                    return SizedBox(
+                      width: size[0],
+                      height: size[1],
                       child: CarCard(
                         imageUrl: state.cars[i].image,
                         model: state.cars[i].model,
