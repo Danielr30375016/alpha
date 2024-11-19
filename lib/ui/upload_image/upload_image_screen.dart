@@ -1,5 +1,6 @@
 import 'package:alpha/di/injection.dart';
 import 'package:alpha/domain/models/car_model.dart';
+import 'package:alpha/helper/router.dart';
 import 'package:alpha/ui/appbar/app_bar_widget.dart';
 import 'package:alpha/ui/upload_image/upload_image_bloc.dart';
 import 'package:alpha/ui/upload_image/upload_image_state.dart';
@@ -9,6 +10,7 @@ import 'package:alpha/ui/widgets/pop_up_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class UpLoadImageScreen extends StatefulWidget {
   final String id;
@@ -283,9 +285,11 @@ class _UpLoadImageScreenState extends State<UpLoadImageScreen> {
 
   Widget _buildSubmitButton(UploadImageState state) {
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
         if (_formKey.currentState!.validate()) {
-          _uploadImageBloc.submitData(context, state.carModel!);
+          bool response =
+              await _uploadImageBloc.submitData(context, state.carModel!);
+          if (response) context.pop();
         }
       },
       style: ElevatedButton.styleFrom(

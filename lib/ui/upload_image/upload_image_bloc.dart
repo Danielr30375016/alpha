@@ -88,12 +88,12 @@ class UploadImageBloc extends Cubit<UploadImageState> {
     }
   }
 
-  Future<void> submitData(BuildContext context, CarModel carModel) async {
+  Future<bool> submitData(BuildContext context, CarModel carModel) async {
     if (state.pickedFile == null &&
         carModel.image.isEmpty &&
         carModel.id == null) {
       emit(state.copyWith(showMessage: 1, aux: !state.aux));
-      return;
+      return false;
     }
     emit(state.copyWith(carModel: carModel));
     if (state.pickedFile != null) {
@@ -110,6 +110,7 @@ class UploadImageBloc extends Cubit<UploadImageState> {
     }
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Car added successfully')));
+    return true;
   }
 
   void clearMessage() {
