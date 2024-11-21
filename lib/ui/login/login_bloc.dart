@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:alpha/ui/admin_marketplace/admin_marketplace_screen.dart';
 import 'package:alpha/ui/login/login_state.dart';
-import 'package:alpha/ui/upload_image/upload_image_screen.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -31,8 +30,8 @@ class LoginBloc extends Cubit<LoginState> {
       required String password,
       required BuildContext context}) async {
     try {
-      final _auth = FirebaseAuth.instance;
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final auth = FirebaseAuth.instance;
+      UserCredential userCredential = await auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );

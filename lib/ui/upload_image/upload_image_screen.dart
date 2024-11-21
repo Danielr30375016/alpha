@@ -1,6 +1,5 @@
 import 'package:alpha/di/injection.dart';
 import 'package:alpha/domain/models/car_model.dart';
-import 'package:alpha/helper/router.dart';
 import 'package:alpha/ui/appbar/app_bar_widget.dart';
 import 'package:alpha/ui/upload_image/upload_image_bloc.dart';
 import 'package:alpha/ui/upload_image/upload_image_state.dart';

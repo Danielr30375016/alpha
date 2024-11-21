@@ -5,6 +5,6 @@ class HomeBloc extends Cubit<HomeState> {
   HomeBloc() : super(const HomeState());
 
   Future<void> getFirstState() async {
-    emit(HomeState(message: 'Hello'));
+    emit(const HomeState(message: 'Hello'));
   }
 }
