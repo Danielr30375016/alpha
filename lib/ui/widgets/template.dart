@@ -20,13 +20,20 @@ class Template extends StatelessWidget {
             height: constraints.maxHeight,
             color: Colors.grey[800],
             child: SingleChildScrollView(
-                child: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.05),
-              child: child,
-            ))),
+              child: Column(
+                children: [
+                  SingleChildScrollView(
+                      child: Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width * 0.05),
+                    child: child,
+                  )),
+                  const SizedBox(height: 50),
+                  ResponsiveFooter()
+                ],
+              ),
+            )),
       ),
-      bottomNavigationBar: ResponsiveFooter(),
     ));
   }
 }
